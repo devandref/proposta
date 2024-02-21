@@ -6,9 +6,8 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
-import lombok.extern.log4j.Log4j;
 
-@Log4j
+
 @Path("/api/proposal")
 public class ProposalController {
 

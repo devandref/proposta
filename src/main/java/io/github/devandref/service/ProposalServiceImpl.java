@@ -5,11 +5,14 @@ import io.github.devandref.dto.ProposalDetailsDTO;
 import io.github.devandref.entity.ProposalEntity;
 import io.github.devandref.message.KafkaEvent;
 import io.github.devandref.repository.ProposalRepository;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 
 import java.time.LocalDate;
 
+@ApplicationScoped
 public class ProposalServiceImpl implements ProposalService {
 
     @Inject
@@ -21,6 +24,9 @@ public class ProposalServiceImpl implements ProposalService {
     @Override
     public ProposalDetailsDTO findFullProposal(long id) {
         ProposalEntity proposal = proposalRepository.findById(id);
+        if(null == proposal) {
+            throw new EntityNotFoundException("No proposal found with id: " + id);
+        }
         return ProposalDetailsDTO.builder()
                 .proposalId(proposal.getId())
                 .proposalValidityDays(proposal.getProposalValidityDays())
@@ -39,26 +45,27 @@ public class ProposalServiceImpl implements ProposalService {
     }
 
     @Override
+    @Transactional
     public void removeProposal(long id) {
         proposalRepository.deleteById(id);
     }
 
     @Transactional
-    private ProposalDTO buildAndSaveNewProposal(ProposalDetailsDTO proposalDetailsDTO) {
-            ProposalEntity proposal = new ProposalEntity();
-            proposal.setCountry(LocalDate.now().toString());
-            proposal.setProposalValidityDays(proposalDetailsDTO.getProposalValidityDays());
-            proposal.setCountry(proposalDetailsDTO.getCountry());
-            proposal.setCustomer(proposalDetailsDTO.getCustomer());
-            proposal.setPriceTonne(proposalDetailsDTO.getPriceTonne());
-            proposal.setTonnes(proposalDetailsDTO.getTonnes());
+    public ProposalDTO buildAndSaveNewProposal(ProposalDetailsDTO proposalDetailsDTO) {
+        ProposalEntity proposal = new ProposalEntity();
+        proposal.setCountry(LocalDate.now().toString());
+        proposal.setProposalValidityDays(proposalDetailsDTO.getProposalValidityDays());
+        proposal.setCountry(proposalDetailsDTO.getCountry());
+        proposal.setCustomer(proposalDetailsDTO.getCustomer());
+        proposal.setPriceTonne(proposalDetailsDTO.getPriceTonne());
+        proposal.setTonnes(proposalDetailsDTO.getTonnes());
 
-            proposalRepository.persist(proposal);
-            return ProposalDTO.builder()
-                    .proposalId(proposalRepository.findByCustomer(proposal.getCustomer()).get().getId())
-                    .priceTonne(proposal.getPriceTonne())
-                    .customer(proposal.getCustomer())
-                    .build();
+        proposalRepository.persist(proposal);
+        return ProposalDTO.builder()
+                .proposalId(proposalRepository.findByCustomer(proposal.getCustomer()).get().getId())
+                .priceTonne(proposal.getPriceTonne())
+                .customer(proposal.getCustomer())
+                .build();
 
     }
 }
